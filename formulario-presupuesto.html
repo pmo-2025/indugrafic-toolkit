@@ -1,0 +1,244 @@
+<!-- INDUGRAFIC · Formulario multi-step de presupuesto -->
+<style>
+.ig-pres{--ig-primary:#c00;--ig-primary-dark:#900;--ig-text:#111;--ig-muted:#666;--ig-border:#e5e5e5;--ig-bg:#f9f9f9;--ig-ok:#059669;--ig-err:#dc2626;font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:var(--ig-text);max-width:600px;margin:0 auto;padding:24px;box-sizing:border-box}
+.ig-pres *,.ig-pres *::before,.ig-pres *::after{box-sizing:border-box}
+.ig-pres h3{margin:0 0 16px;font-size:1.25rem;font-weight:700;color:var(--ig-text)}
+.ig-pres p{margin:0 0 12px;line-height:1.55;color:var(--ig-text)}
+.ig-pres small{color:var(--ig-muted);display:block;margin-top:4px;font-size:.82rem;line-height:1.4}
+.ig-pres label{display:block;margin-bottom:14px;font-size:.95rem;font-weight:500}
+.ig-pres label>span{display:block;margin-bottom:4px}
+.ig-pres label>span.req::after{content:' *';color:var(--ig-primary)}
+.ig-pres input[type=text],.ig-pres input[type=email],.ig-pres input[type=tel],.ig-pres input[type=number],.ig-pres textarea,.ig-pres select{width:100%;padding:11px 12px;border:1.5px solid var(--ig-border);border-radius:6px;font-size:1rem;font-family:inherit;background:#fff;color:var(--ig-text);transition:border-color .15s}
+.ig-pres input:focus,.ig-pres textarea:focus,.ig-pres select:focus{outline:none;border-color:var(--ig-primary)}
+.ig-pres textarea{resize:vertical;min-height:110px}
+.ig-pres .ig-file-drop{border:2px dashed var(--ig-border);border-radius:8px;padding:20px;text-align:center;background:var(--ig-bg);cursor:pointer;transition:.15s}
+.ig-pres .ig-file-drop:hover{border-color:var(--ig-primary);background:#fff}
+.ig-pres .ig-file-drop.has-file{border-color:var(--ig-ok);background:#f0fdf4}
+.ig-pres .ig-file-drop input{display:none}
+.ig-pres .ig-file-name{font-weight:600;margin-top:8px;word-break:break-all}
+.ig-pres .ig-honey{position:absolute;left:-9999px;top:-9999px;opacity:0}
+.ig-pres .ig-steps{display:flex;gap:8px;margin-bottom:24px}
+.ig-pres .ig-step-dot{flex:1;height:5px;background:var(--ig-border);border-radius:3px;transition:.2s}
+.ig-pres .ig-step-dot.active{background:var(--ig-primary)}
+.ig-pres .ig-step-label{font-size:.82rem;color:var(--ig-muted);text-align:center;margin-bottom:20px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.ig-pres .ig-step{display:none;animation:igFade .25s ease}
+.ig-pres .ig-step.active{display:block}
+@keyframes igFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ig-pres .ig-actions{display:flex;justify-content:space-between;gap:12px;margin-top:24px}
+.ig-pres .ig-btn{padding:12px 24px;border-radius:6px;font-size:.95rem;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:.15s}
+.ig-pres .ig-btn-primary{background:var(--ig-primary);color:#fff}
+.ig-pres .ig-btn-primary:hover{background:var(--ig-primary-dark)}
+.ig-pres .ig-btn-primary:disabled{background:#ccc;cursor:wait}
+.ig-pres .ig-btn-ghost{background:transparent;color:var(--ig-muted);border:1.5px solid var(--ig-border)}
+.ig-pres .ig-btn-ghost:hover{color:var(--ig-text);border-color:var(--ig-text)}
+.ig-pres .ig-summary{background:var(--ig-bg);border-radius:6px;padding:16px;margin-bottom:16px;font-size:.92rem;line-height:1.7}
+.ig-pres .ig-summary strong{display:inline-block;min-width:110px;color:var(--ig-muted);font-weight:500}
+.ig-pres .ig-check{display:flex;align-items:flex-start;gap:8px;font-size:.9rem;line-height:1.5;cursor:pointer}
+.ig-pres .ig-check input{margin-top:3px;flex-shrink:0}
+.ig-pres .ig-msg{padding:14px 16px;border-radius:6px;margin-bottom:16px;font-size:.92rem;line-height:1.5;display:none}
+.ig-pres .ig-msg.show{display:block}
+.ig-pres .ig-msg.err{background:#fee;color:var(--ig-err);border:1px solid #fecaca}
+.ig-pres .ig-msg.ok{background:#f0fdf4;color:var(--ig-ok);border:1px solid #bbf7d0}
+</style>
+
+<div class="ig-pres" id="igPres">
+  <div class="ig-step-label" id="igStepLabel">Paso 1 de 3 · Tus datos</div>
+  <div class="ig-steps">
+    <div class="ig-step-dot active" data-dot="1"></div>
+    <div class="ig-step-dot" data-dot="2"></div>
+    <div class="ig-step-dot" data-dot="3"></div>
+  </div>
+
+  <div class="ig-msg" id="igMsg"></div>
+
+  <form id="igForm" novalidate>
+    <!-- Honeypot -->
+    <input class="ig-honey" type="text" name="website" tabindex="-1" autocomplete="off">
+
+    <!-- Paso 1: Datos personales -->
+    <div class="ig-step active" data-step="1">
+      <h3>¿Cómo te llamas?</h3>
+      <label><span class="req">Nombre completo</span>
+        <input type="text" name="nombre" required autocomplete="name">
+      </label>
+      <label><span class="req">Email</span>
+        <input type="email" name="email" required autocomplete="email">
+      </label>
+      <label><span class="req">Teléfono</span>
+        <input type="tel" name="telefono" required autocomplete="tel">
+      </label>
+      <label><span>Empresa (opcional)</span>
+        <input type="text" name="empresa" autocomplete="organization">
+      </label>
+    </div>
+
+    <!-- Paso 2: Pedido -->
+    <div class="ig-step" data-step="2">
+      <h3>Cuéntanos qué necesitas</h3>
+      <label><span>Adjunta tu diseño vectorizado o archivo de referencia</span>
+        <div class="ig-file-drop" id="igDrop">
+          <input type="file" name="archivo" id="igFile" accept=".pdf,.ai,.eps,.svg,.png,.jpg,.jpeg">
+          <div id="igDropText">
+            <div style="font-size:2rem;line-height:1">📎</div>
+            <div><strong>Haz clic para seleccionar</strong></div>
+            <small>PDF · AI · EPS · SVG · PNG · JPG — máx. 15 MB</small>
+          </div>
+          <div class="ig-file-name" id="igFileName" style="display:none"></div>
+        </div>
+      </label>
+      <label><span class="req">Descripción del pedido</span>
+        <textarea name="descripcion" required placeholder="Medidas, acabado, urgencia, cualquier detalle que necesitemos saber para preparar tu presupuesto."></textarea>
+      </label>
+      <label><span class="req">Cantidad</span>
+        <input type="text" name="cantidad" required placeholder="Ej: 1 unidad, 50, 100...">
+      </label>
+    </div>
+
+    <!-- Paso 3: Confirmar -->
+    <div class="ig-step" data-step="3">
+      <h3>Revisa y envía</h3>
+      <div class="ig-summary" id="igSummary"></div>
+      <label class="ig-check">
+        <input type="checkbox" name="privacidad" value="1" required>
+        <span>He leído y acepto la <a href="https://indugrafic.es/politica-de-privacidad-rgpd/" target="_blank" rel="noopener">política de privacidad</a>.</span>
+      </label>
+    </div>
+
+    <div class="ig-actions">
+      <button type="button" class="ig-btn ig-btn-ghost" id="igBack" style="visibility:hidden">← Atrás</button>
+      <button type="button" class="ig-btn ig-btn-primary" id="igNext">Siguiente →</button>
+    </div>
+
+    <!-- Campos ocultos rellenados por Elementor -->
+    <input type="hidden" name="producto_id" id="igProdId">
+    <input type="hidden" name="producto_nombre" id="igProdName">
+    <input type="hidden" name="producto_url" id="igProdUrl">
+    <input type="hidden" name="categoria" id="igProdCat">
+  </form>
+</div>
+
+<script>
+(function(){
+  var root = document.getElementById('igPres');
+  if (!root || root.dataset.init) return;
+  root.dataset.init = '1';
+
+  var ENDPOINT = 'https://indugrafic.es/wp-json/indugrafic/v1/presupuesto';
+  var MAX_SIZE = 15 * 1024 * 1024;
+  var ALLOWED_EXT = ['pdf','ai','eps','svg','png','jpg','jpeg'];
+  var LABELS = ['Paso 1 de 3 · Tus datos','Paso 2 de 3 · Tu pedido','Paso 3 de 3 · Confirmar y enviar'];
+
+  var form = document.getElementById('igForm');
+  var msgEl = document.getElementById('igMsg');
+  var btnNext = document.getElementById('igNext');
+  var btnBack = document.getElementById('igBack');
+  var stepLabel = document.getElementById('igStepLabel');
+  var steps = root.querySelectorAll('.ig-step');
+  var dots = root.querySelectorAll('.ig-step-dot');
+  var current = 1;
+
+  // Autocompletar campos ocultos con datos del producto
+  var body = document.body;
+  var prodId = (body.className.match(/postid-(\d+)/) || [])[1] || '';
+  var prodCat = (body.className.match(/product_cat-([a-z0-9-]+)/) || [])[1] || '';
+  var prodTitle = document.querySelector('.wpr-product-title, .product_title, h1.entry-title, .wpr-product-title-text, .elementor-heading-title');
+  if (!prodTitle) prodTitle = document.querySelector('h1');
+  var prodName = prodTitle ? prodTitle.textContent.trim() : '';
+  var prodUrl = window.location.href.split('?')[0].split('#')[0];
+  document.getElementById('igProdId').value = prodId;
+  document.getElementById('igProdName').value = prodName;
+  document.getElementById('igProdUrl').value = prodUrl;
+  document.getElementById('igProdCat').value = prodCat;
+
+  // Archivo
+  var fileInput = document.getElementById('igFile');
+  var drop = document.getElementById('igDrop');
+  var dropText = document.getElementById('igDropText');
+  var fileNameEl = document.getElementById('igFileName');
+  drop.addEventListener('click', function(){ fileInput.click(); });
+  fileInput.addEventListener('change', function(){
+    var f = fileInput.files[0];
+    if (!f) return;
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    if (ALLOWED_EXT.indexOf(ext) === -1) { showMsg('err', 'Formato no permitido. Sube PDF, AI, EPS, SVG, PNG o JPG.'); fileInput.value=''; return; }
+    if (f.size > MAX_SIZE) { showMsg('err', 'El archivo supera los 15 MB.'); fileInput.value=''; return; }
+    dropText.style.display = 'none';
+    fileNameEl.style.display = 'block';
+    fileNameEl.textContent = '✓ ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)';
+    drop.classList.add('has-file');
+    hideMsg();
+  });
+
+  function showMsg(type, text){
+    msgEl.className = 'ig-msg show ' + type;
+    msgEl.textContent = text;
+    msgEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+  function hideMsg(){ msgEl.className = 'ig-msg'; }
+
+  function validateStep(n){
+    var stepEl = steps[n-1];
+    var required = stepEl.querySelectorAll('[required]');
+    for (var i=0;i<required.length;i++){
+      var el = required[i];
+      var val = (el.value||'').trim();
+      if (el.type === 'checkbox' && !el.checked) { showMsg('err', 'Debes aceptar la política de privacidad para continuar.'); el.focus(); return false; }
+      if (el.type !== 'checkbox' && !val) { showMsg('err', 'Rellena todos los campos obligatorios.'); el.focus(); return false; }
+      if (el.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { showMsg('err', 'Introduce un email válido.'); el.focus(); return false; }
+    }
+    hideMsg();
+    return true;
+  }
+
+  function buildSummary(){
+    var d = new FormData(form);
+    var html = '';
+    html += '<div><strong>Producto:</strong> ' + (d.get('producto_nombre') || '—') + '</div>';
+    html += '<div><strong>Nombre:</strong> ' + d.get('nombre') + '</div>';
+    html += '<div><strong>Email:</strong> ' + d.get('email') + '</div>';
+    html += '<div><strong>Teléfono:</strong> ' + d.get('telefono') + '</div>';
+    if (d.get('empresa')) html += '<div><strong>Empresa:</strong> ' + d.get('empresa') + '</div>';
+    html += '<div><strong>Cantidad:</strong> ' + d.get('cantidad') + '</div>';
+    var f = fileInput.files[0];
+    html += '<div><strong>Archivo:</strong> ' + (f ? f.name : 'Sin adjunto') + '</div>';
+    html += '<div style="margin-top:8px"><strong>Descripción:</strong><br>' + (d.get('descripcion')||'').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+    document.getElementById('igSummary').innerHTML = html;
+  }
+
+  function goStep(n){
+    current = n;
+    steps.forEach(function(s,i){ s.classList.toggle('active', i === n-1); });
+    dots.forEach(function(dot,i){ dot.classList.toggle('active', i <= n-1); });
+    stepLabel.textContent = LABELS[n-1];
+    btnBack.style.visibility = (n === 1) ? 'hidden' : 'visible';
+    btnNext.textContent = (n === 3) ? 'Enviar solicitud ✓' : 'Siguiente →';
+    if (n === 3) buildSummary();
+    root.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  btnNext.addEventListener('click', async function(){
+    if (!validateStep(current)) return;
+    if (current < 3) { goStep(current + 1); return; }
+    // Enviar
+    btnNext.disabled = true;
+    btnNext.textContent = 'Enviando...';
+    var fd = new FormData(form);
+    try {
+      var r = await fetch(ENDPOINT, { method: 'POST', body: fd });
+      var j = await r.json();
+      if (r.ok && j.ok) {
+        root.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:3rem;line-height:1;margin-bottom:16px">✓</div><h3 style="color:#059669">¡Solicitud enviada!</h3><p>' + (j.mensaje || 'Te contestaremos en menos de 24 horas.') + '</p></div>';
+      } else {
+        showMsg('err', j.error || 'No se pudo enviar. Prueba de nuevo en unos segundos.');
+        btnNext.disabled = false;
+        btnNext.textContent = 'Enviar solicitud ✓';
+      }
+    } catch(e) {
+      showMsg('err', 'Error de conexión. Comprueba tu red y reintenta.');
+      btnNext.disabled = false;
+      btnNext.textContent = 'Enviar solicitud ✓';
+    }
+  });
+  btnBack.addEventListener('click', function(){ if (current > 1) goStep(current - 1); });
+})();
+</script>

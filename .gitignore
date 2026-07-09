@@ -1,0 +1,21 @@
+# Credenciales
+.env
+.env.*
+!.env.example
+
+# Datos runtime que se regeneran al ejecutar los scripts
+popup-id.json
+snippet-created.json
+
+# HTML de referencia (grande, no necesario en el repo)
+product-page.html
+
+# Node
+node_modules/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
