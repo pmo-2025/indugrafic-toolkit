@@ -185,18 +185,16 @@ add_action('woocommerce_single_product_summary', function () {
     echo $out;
 }, 33);
 
-/* 2.A4 - Sellos de confianza AHORA DEBAJO DE LA GALERÍA (columna izquierda)
- *        En vez de single_product_summary (columna derecha), usamos
- *        before_single_product_summary priority 25 (después de la galería que va en 20). */
-add_action('woocommerce_before_single_product_summary', function () {
+/* 2.A4 - Sellos de confianza en la columna derecha (dentro del summary) */
+add_action('woocommerce_single_product_summary', function () {
     if (!indugrafic_is_test_product()) return;
-    $out  = '<div class="ig-nativo-sellos ig-under-gallery">';
+    $out  = '<div class="ig-nativo-sellos ig-in-summary">';
     $out .= '<div class="ig-sello">❓ Déjanos tu pedido</div>';
     $out .= '<div class="ig-sello">⏱ Producción 24-48 horas</div>';
     $out .= '<div class="ig-sello">🎨 Personalizado según tu diseño</div>';
     $out .= '</div>';
     echo $out;
-}, 25);
+}, 35);
 
 /* 2.A.bis - Ocultar la pestaña "Información adicional" (ya movida arriba como bloques) */
 add_filter('woocommerce_product_tabs', function ($tabs) {
@@ -373,11 +371,9 @@ add_action('wp_head', function () {
     $css .= '.single-product .product .ig-cta-wa:hover{background:#128c7e}';
     $css .= '.single-product .product .ig-cta-tel{background:#1a1a1a}';
     $css .= '.single-product .product .ig-cta-tel:hover{background:#374151}';
-    /* Sellos de confianza — debajo de la galería en columna izquierda */
+    /* Sellos de confianza (compactos para columna derecha) */
     $css .= '.single-product .product .ig-nativo-sellos{display:flex;flex-direction:column;gap:8px;padding:16px;background:#f9f9f9;border-radius:8px}';
     $css .= '.single-product .product .ig-sello{display:flex;align-items:center;gap:8px;font-size:.9rem;color:#4b5563}';
-    $css .= '.single-product .product .ig-nativo-sellos.ig-under-gallery{float:left;clear:left;width:48%;margin-top:20px}';
-    $css .= '@media (max-width:768px){.single-product .product .ig-nativo-sellos.ig-under-gallery{float:none;width:100%;margin:16px 0}}';
     /* MODAL formulario */
     $css .= '.ig-modal{display:none;position:fixed;inset:0;z-index:99999}';
     $css .= '.ig-modal[aria-hidden="false"]{display:block}';
