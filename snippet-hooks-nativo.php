@@ -12,20 +12,40 @@ function indugrafic_is_test_product() {
     return (int) get_the_ID() === INDUGRAFIC_TEST_ID;
 }
 
-/* 0. Forzar que Elementor y Royal Addons NO apliquen su Single Product template
- *    para el producto de test. Devolvemos array vacío → sin template Elementor → WC nativo. */
+/* 0.A - Interceptar la opción wpr_product_single_conditions solo cuando estamos
+ *       en el producto de test. Royal lee esta opción con get_option y decide si
+ *       aplica su plantilla. Si devolvemos "[]", cree que no hay condiciones y no
+ *       toca el render → WooCommerce nativo. */
+add_filter('pre_option_wpr_product_single_conditions', function ($pre_value) {
+    if (function_exists('is_product') && is_product() && (int) get_the_ID() === INDUGRAFIC_TEST_ID) {
+        return '[]';
+    }
+    return $pre_value;
+});
+
+/* 0.B - Backup por si Royal cachea la opción: template_include con priority
+ *       superior a la 12 de Royal (convert_to_canvas). */
+add_filter('template_include', function ($template) {
+    if (function_exists('is_product') && is_product() && (int) get_the_ID() === INDUGRAFIC_TEST_ID) {
+        if (defined('WC_ABSPATH')) {
+            $wc_tpl = WC_ABSPATH . 'templates/single-product.php';
+            if (file_exists($wc_tpl)) return $wc_tpl;
+        }
+        if (function_exists('WC')) {
+            $wc_tpl = WC()->plugin_path() . '/templates/single-product.php';
+            if (file_exists($wc_tpl)) return $wc_tpl;
+        }
+    }
+    return $template;
+}, 20);
+
+/* 0.C - También bloqueamos el filter de Elementor por si aplica plantilla. */
 add_filter('elementor/theme/get_location_templates', function ($templates, $location) {
     if ($location !== 'single' && $location !== 'single-product') return $templates;
     if (!is_singular('product')) return $templates;
     if ((int) get_the_ID() !== INDUGRAFIC_TEST_ID) return $templates;
     return [];
 }, 20, 2);
-
-/* Backup: si Royal Addons usa su propio filter, también lo interceptamos. */
-add_filter('wpr_woo_builder_template_id', function ($id) {
-    if (is_singular('product') && (int) get_the_ID() === INDUGRAFIC_TEST_ID) return 0;
-    return $id;
-});
 
 /* 1. Ocultar precio + add-to-cart + ratings */
 add_action('woocommerce_before_single_product', function () {
