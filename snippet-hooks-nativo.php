@@ -118,16 +118,15 @@ function indugrafic_color_hex($name) {
     return $map[$key] ?? '#9ca3af';
 }
 
-/* 2.A - Atributos como bloques visuales (colores en chips, tamaños en pills)
- *       Se renderiza antes del bloque de pasos (priority 12). */
-add_action('woocommerce_after_single_product_summary', function () {
+/* 2.A - Atributos como chips DENTRO de la columna derecha (summary) */
+add_action('woocommerce_single_product_summary', function () {
     if (!indugrafic_is_test_product()) return;
     $product = wc_get_product(get_the_ID());
     if (!$product) return;
     $attributes = $product->get_attributes();
     if (empty($attributes)) return;
 
-    $out = '<div class="ig-atributos">';
+    $out = '<div class="ig-atributos ig-in-summary">';
     foreach ($attributes as $attr) {
         $name = wc_attribute_label($attr->get_name());
         $values = $attr->is_taxonomy()
@@ -156,7 +155,48 @@ add_action('woocommerce_after_single_product_summary', function () {
     }
     $out .= '</div>';
     echo $out;
-}, 12);
+}, 25);
+
+/* 2.A2 - Bloque "Cómo hacer tu pedido en 4 pasos" en la columna derecha */
+add_action('woocommerce_single_product_summary', function () {
+    if (!indugrafic_is_test_product()) return;
+    $out  = '<div class="ig-nativo-pasos ig-in-summary">';
+    $out .= '<h3>Cómo hacer tu pedido en 4 pasos</h3>';
+    $out .= '<ol>';
+    $out .= '<li><strong>Rellena el formulario</strong> y adjunta tu diseño vectorizado.</li>';
+    $out .= '<li><strong>Recibirás un correo</strong> con el presupuesto y el diseño definitivo en menos de 24 horas laborables.</li>';
+    $out .= '<li><strong>Acepta el diseño</strong>, realiza el pago y dinos la dirección de envío.</li>';
+    $out .= '<li><strong>Lo recibirás en tu domicilio</strong> en 48 horas.</li>';
+    $out .= '</ol></div>';
+    echo $out;
+}, 30);
+
+/* 2.A3 - Bloque CTA (Solicitar presupuesto + WhatsApp + Llamar) */
+add_action('woocommerce_single_product_summary', function () {
+    if (!indugrafic_is_test_product()) return;
+    $prod_name = get_the_title();
+    $wa_msg = rawurlencode('Hola, me interesa ' . $prod_name . '. Quiero información antes de rellenar el formulario.');
+    $out  = '<div class="ig-cta-block ig-in-summary">';
+    $out .= '<button type="button" class="ig-cta-primary" id="igOpenModal" disabled data-tooltip="Selecciona color y tamaño para continuar">📝 Solicitar presupuesto</button>';
+    $out .= '<div class="ig-cta-secondary">';
+    $out .= '<a class="ig-cta-btn ig-cta-wa" href="https://wa.me/' . INDUGRAFIC_WA . '?text=' . $wa_msg . '" target="_blank" rel="noopener">💬 WhatsApp</a>';
+    $out .= '<a class="ig-cta-btn ig-cta-tel" href="tel:' . INDUGRAFIC_TEL . '">📞 Llamar</a>';
+    $out .= '</div></div>';
+    echo $out;
+}, 33);
+
+/* 2.A4 - Sellos de confianza AHORA DEBAJO DE LA GALERÍA (columna izquierda)
+ *        En vez de single_product_summary (columna derecha), usamos
+ *        before_single_product_summary priority 25 (después de la galería que va en 20). */
+add_action('woocommerce_before_single_product_summary', function () {
+    if (!indugrafic_is_test_product()) return;
+    $out  = '<div class="ig-nativo-sellos ig-under-gallery">';
+    $out .= '<div class="ig-sello">❓ Déjanos tu pedido</div>';
+    $out .= '<div class="ig-sello">⏱ Producción 24-48 horas</div>';
+    $out .= '<div class="ig-sello">🎨 Personalizado según tu diseño</div>';
+    $out .= '</div>';
+    echo $out;
+}, 25);
 
 /* 2.A.bis - Ocultar la pestaña "Información adicional" (ya movida arriba como bloques) */
 add_filter('woocommerce_product_tabs', function ($tabs) {
@@ -188,18 +228,7 @@ add_action('woocommerce_before_single_product', function () {
     }
 }, 20);
 
-/* 2.G - Sticky bar móvil con Llamar / WhatsApp / Pedir presupuesto */
-add_action('wp_footer', function () {
-    if (!indugrafic_is_test_product()) return;
-    $prod_name = get_the_title();
-    $wa_msg = rawurlencode('Hola, me interesa ' . $prod_name . '.');
-    $out  = '<div class="ig-sticky-bar">';
-    $out .= '<a href="tel:' . INDUGRAFIC_TEL . '" class="ig-sticky-item"><span>📞</span><span>Llamar</span></a>';
-    $out .= '<a href="https://wa.me/' . INDUGRAFIC_WA . '?text=' . $wa_msg . '" target="_blank" rel="noopener" class="ig-sticky-item ig-sticky-wa"><span>💬</span><span>WhatsApp</span></a>';
-    $out .= '<a href="#ig-nativo-formulario" class="ig-sticky-item ig-sticky-cta"><span>📝</span><span>Pedir presupuesto</span></a>';
-    $out .= '</div>';
-    echo $out;
-});
+/* 2.G - Sticky bar móvil eliminada — los CTAs ya están en la columna derecha */
 
 /* 2.E - FAQs colapsables genéricas con Schema FAQPage (priority 13, entre chips y pasos) */
 add_action('woocommerce_after_single_product_summary', function () {
@@ -234,33 +263,33 @@ add_action('woocommerce_after_single_product_summary', function () {
     $schema = [ '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $entities ];
     $out .= '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) . '</script>';
     echo $out;
-}, 13);
+}, 18);
 
-/* 2. Pasos + formulario + sellos + botones WhatsApp/Llamar */
-add_action('woocommerce_after_single_product_summary', function () {
+/* 2. Modal con el formulario + JS de control del botón "Solicitar presupuesto" */
+add_action('wp_footer', function () {
     if (!indugrafic_is_test_product()) return;
-    $prod_name = get_the_title();
-    $wa_msg = rawurlencode('Hola, me interesa ' . $prod_name . '. Quiero información antes de rellenar el formulario.');
-    $out  = '<div class="ig-nativo-wrapper">';
-    $out .= '<div class="ig-nativo-pasos">';
-    $out .= '<h3>Como hacer tu pedido en 4 pasos</h3>';
-    $out .= '<ol>';
-    $out .= '<li><strong>Rellena el formulario</strong> y adjunta tu diseno vectorizado.</li>';
-    $out .= '<li><strong>Recibiras un correo</strong> con el presupuesto y el diseno definitivo en menos de 24 horas laborables.</li>';
-    $out .= '<li><strong>Acepta el diseno</strong>, realiza el pago y dinos la direccion de envio.</li>';
-    $out .= '<li><strong>Lo recibiras en tu domicilio</strong> en 48 horas.</li>';
-    $out .= '</ol></div>';
-    $out .= '<div class="ig-nativo-cta-secundario">';
-    $out .= '<span class="ig-nativo-cta-label">¿Prefieres hablar antes?</span>';
-    $out .= '<a class="ig-nativo-cta-btn ig-nativo-cta-wa" href="https://wa.me/' . INDUGRAFIC_WA . '?text=' . $wa_msg . '" target="_blank" rel="noopener">💬 WhatsApp</a>';
-    $out .= '<a class="ig-nativo-cta-btn ig-nativo-cta-tel" href="tel:' . INDUGRAFIC_TEL . '">📞 Llamar ' . INDUGRAFIC_TEL_LABEL . '</a>';
-    $out .= '</div>';
-    $out .= '<div class="ig-nativo-formulario" id="ig-nativo-formulario">' . do_shortcode('[indugrafic_presupuesto_form]') . '</div>';
-    $out .= '<div class="ig-nativo-sellos">';
-    $out .= '<div class="ig-sello">Dejanos tu pedido</div>';
-    $out .= '<div class="ig-sello">Produccion 24-48 horas</div>';
-    $out .= '<div class="ig-sello">Personalizado segun tu diseno</div>';
+    $out  = '<div class="ig-modal" id="igModal" aria-hidden="true" role="dialog" aria-modal="true">';
+    $out .= '<div class="ig-modal-overlay" data-ig-modal-close></div>';
+    $out .= '<div class="ig-modal-panel">';
+    $out .= '<button type="button" class="ig-modal-close" data-ig-modal-close aria-label="Cerrar">✕</button>';
+    $out .= '<div class="ig-modal-body">' . do_shortcode('[indugrafic_presupuesto_form]') . '</div>';
     $out .= '</div></div>';
+    // JS de control
+    $out .= '<script>(function(){';
+    $out .= 'var modal=document.getElementById("igModal");';
+    $out .= 'var openBtn=document.getElementById("igOpenModal");';
+    $out .= 'if(!modal||!openBtn)return;';
+    // Función: comprobar chips y (des)habilitar botón
+    $out .= 'function updateOpenBtn(){var groups={};document.querySelectorAll("[data-ig-chip]").forEach(function(c){var t=c.getAttribute("data-ig-chip");if(!groups[t])groups[t]=false;if(c.classList.contains("is-selected"))groups[t]=true;});var missing=Object.keys(groups).filter(function(t){return !groups[t];});if(missing.length===0){openBtn.disabled=false;openBtn.removeAttribute("data-tooltip");}else{openBtn.disabled=true;var map={color:"un color",tamano:"un tamaño",diametro:"un diámetro",material:"un material"};openBtn.setAttribute("data-tooltip","Selecciona "+missing.map(function(t){return map[t]||t}).join(" y "));}}';
+    // Inicial + al clicar cualquier chip
+    $out .= 'updateOpenBtn();document.addEventListener("click",function(e){if(e.target.closest("[data-ig-chip]"))setTimeout(updateOpenBtn,10);});';
+    // Abrir modal
+    $out .= 'openBtn.addEventListener("click",function(){if(openBtn.disabled)return;modal.setAttribute("aria-hidden","false");document.body.classList.add("ig-modal-open");});';
+    // Cerrar modal
+    $out .= 'function closeModal(){modal.setAttribute("aria-hidden","true");document.body.classList.remove("ig-modal-open");}';
+    $out .= 'modal.querySelectorAll("[data-ig-modal-close]").forEach(function(el){el.addEventListener("click",closeModal);});';
+    $out .= 'document.addEventListener("keydown",function(e){if(e.key==="Escape"&&modal.getAttribute("aria-hidden")==="false")closeModal();});';
+    $out .= '})();</script>';
     echo $out;
 }, 15);
 
@@ -292,10 +321,12 @@ add_action('wp_head', function () {
     $css  = '.single-product.woocommerce div.product,.single-product .woocommerce div.product{max-width:1200px;margin:0 auto;padding:48px 40px}';
     $css .= '.single-product .related.products,.single-product .up-sells.products{max-width:1200px;margin:60px auto 0;padding:40px 40px 60px;border-top:1px solid #ececec}';
     $css .= '.single-product .related.products h2,.single-product .up-sells h2{font-size:1.5rem;color:#1a1a1a;margin-bottom:24px}';
-    /* Limpiar floats de la galería WC para que nuestros bloques queden debajo */
-    $css .= '.single-product .product .ig-atributos,.single-product .product .ig-nativo-wrapper,.single-product .woocommerce-tabs,.single-product .related.products,.single-product .up-sells.products{clear:both}';
+    /* Clear both solo para lo que va abajo full-width (FAQs, tabs, related) */
+    $css .= '.single-product .woocommerce-tabs,.single-product .related.products,.single-product .up-sells.products,.single-product .product .ig-faqs{clear:both}';
+    /* Bloques dentro del summary (columna derecha) — sin float, ancho auto */
+    $css .= '.single-product .product .ig-in-summary{margin:20px 0 0;max-width:none;padding:0}';
     /* Atributos visuales */
-    $css .= '.single-product .product .ig-atributos{max-width:900px;margin:32px auto 0;padding:32px 20px 0;display:flex;flex-direction:column;gap:20px}';
+    $css .= '.single-product .product .ig-atributos{display:flex;flex-direction:column;gap:16px}';
     $css .= '.single-product .product .ig-attr-label{font-size:.82rem;color:#6b7280;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px}';
     $css .= '.single-product .product .ig-attr-items{display:flex;flex-wrap:wrap;gap:10px}';
     $css .= '.single-product .product .ig-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1.5px solid #e5e7eb;border-radius:999px;font-size:.9rem;color:#1a1a1a;font-weight:500;transition:.15s}';
@@ -325,25 +356,38 @@ add_action('wp_head', function () {
     $css .= '.single-product .product .ig-faq-q::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:1.4rem;color:#fcb10e;font-weight:400;transition:.15s}';
     $css .= '.single-product .product .ig-faq[open] .ig-faq-q::after{content:"−"}';
     $css .= '.single-product .product .ig-faq-a{padding:0 18px 16px;color:#4b5563;line-height:1.6}';
-    /* Botones WhatsApp/Llamar */
-    $css .= '.single-product .product .ig-nativo-cta-secundario{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;padding:16px;background:#fff;border:1px dashed #d1d5db;border-radius:8px;margin-bottom:20px}';
-    $css .= '.single-product .product .ig-nativo-cta-label{font-size:.95rem;color:#4b5563;font-weight:500;margin-right:8px}';
-    $css .= '.single-product .product .ig-nativo-cta-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:#1a1a1a;color:#fff!important;text-decoration:none!important;border-radius:6px;font-size:.95rem;font-weight:600;transition:.15s}';
-    $css .= '.single-product .product .ig-nativo-cta-btn:hover{background:#fcb10e;color:#1a1a1a!important}';
-    $css .= '.single-product .product .ig-nativo-cta-wa{background:#25d366}';
-    $css .= '.single-product .product .ig-nativo-cta-wa:hover{background:#128c7e;color:#fff!important}';
-    /* Sticky bar móvil */
-    $css .= '.ig-sticky-bar{display:none}';
-    $css .= '@media (max-width:768px){.ig-sticky-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;box-shadow:0 -4px 12px rgba(0,0,0,.08);z-index:9999;padding:6px 4px}.ig-sticky-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;color:#1a1a1a!important;text-decoration:none!important;font-size:.72rem;font-weight:600;line-height:1.1;text-align:center}.ig-sticky-item span:first-child{font-size:1.3rem;line-height:1}.ig-sticky-item.ig-sticky-wa{color:#25d366!important}.ig-sticky-item.ig-sticky-cta{color:#fcb10e!important}body.single-product{padding-bottom:64px!important}}';
-    /* Original */
-    $css .= '.single-product .product .ig-nativo-wrapper{max-width:900px;margin:40px auto;padding:0 20px}';
-    $css .= '.ig-nativo-pasos{background:#fef8e7;border-left:5px solid #fcb10e;padding:24px 28px;margin-bottom:32px;border-radius:6px}';
-    $css .= '.ig-nativo-pasos h3{margin:0 0 16px;font-size:1.35rem;color:#1a1a1a;font-weight:700}';
-    $css .= '.ig-nativo-pasos ol{margin:0;padding-left:24px}';
-    $css .= '.ig-nativo-pasos ol li{margin-bottom:10px;line-height:1.6;color:#333}';
-    $css .= '.ig-nativo-formulario{background:#fff;padding:8px 0;margin-bottom:24px}';
-    $css .= '.ig-nativo-sellos{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;padding:24px 20px;background:#f9f9f9;border-radius:8px;margin-bottom:20px}';
-    $css .= '.ig-sello{display:flex;align-items:center;gap:8px;font-size:.95rem;color:#444}';
+    /* Bloque de 4 pasos (dentro del summary ahora) */
+    $css .= '.single-product .product .ig-nativo-pasos{background:#fef8e7;border-left:5px solid #fcb10e;padding:18px 20px;border-radius:6px}';
+    $css .= '.single-product .product .ig-nativo-pasos h3{margin:0 0 12px;font-size:1.1rem;color:#1a1a1a;font-weight:700}';
+    $css .= '.single-product .product .ig-nativo-pasos ol{margin:0;padding-left:22px}';
+    $css .= '.single-product .product .ig-nativo-pasos ol li{margin-bottom:8px;line-height:1.5;color:#333;font-size:.92rem}';
+    /* CTA bloque: Solicitar arriba, WA+Llamar debajo */
+    $css .= '.single-product .product .ig-cta-block{display:flex;flex-direction:column;gap:10px}';
+    $css .= '.single-product .product .ig-cta-primary{display:block;width:100%;padding:16px 20px;background:#fcb10e;color:#1a1a1a;border:none;border-radius:8px;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;position:relative}';
+    $css .= '.single-product .product .ig-cta-primary:hover:not([disabled]){background:#d99700;transform:translateY(-1px);box-shadow:0 4px 12px rgba(252,177,14,.35)}';
+    $css .= '.single-product .product .ig-cta-primary[disabled]{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;box-shadow:none}';
+    $css .= '.single-product .product .ig-cta-primary[disabled][data-tooltip]:hover::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:6px 12px;border-radius:4px;font-size:.82rem;font-weight:500;white-space:nowrap;pointer-events:none;z-index:100}';
+    $css .= '.single-product .product .ig-cta-secondary{display:flex;gap:8px}';
+    $css .= '.single-product .product .ig-cta-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 14px;color:#fff!important;text-decoration:none!important;border-radius:6px;font-size:.95rem;font-weight:600;transition:.15s}';
+    $css .= '.single-product .product .ig-cta-wa{background:#25d366}';
+    $css .= '.single-product .product .ig-cta-wa:hover{background:#128c7e}';
+    $css .= '.single-product .product .ig-cta-tel{background:#1a1a1a}';
+    $css .= '.single-product .product .ig-cta-tel:hover{background:#374151}';
+    /* Sellos de confianza — debajo de la galería en columna izquierda */
+    $css .= '.single-product .product .ig-nativo-sellos{display:flex;flex-direction:column;gap:8px;padding:16px;background:#f9f9f9;border-radius:8px}';
+    $css .= '.single-product .product .ig-sello{display:flex;align-items:center;gap:8px;font-size:.9rem;color:#4b5563}';
+    $css .= '.single-product .product .ig-nativo-sellos.ig-under-gallery{float:left;clear:left;width:48%;margin-top:20px}';
+    $css .= '@media (max-width:768px){.single-product .product .ig-nativo-sellos.ig-under-gallery{float:none;width:100%;margin:16px 0}}';
+    /* MODAL formulario */
+    $css .= '.ig-modal{display:none;position:fixed;inset:0;z-index:99999}';
+    $css .= '.ig-modal[aria-hidden="false"]{display:block}';
+    $css .= '.ig-modal-overlay{position:absolute;inset:0;background:rgba(15,23,42,.75);backdrop-filter:blur(3px)}';
+    $css .= '.ig-modal-panel{position:relative;max-width:640px;width:calc(100% - 32px);max-height:calc(100vh - 40px);margin:20px auto;background:#fff;border-radius:12px;box-shadow:0 25px 60px -20px rgba(0,0,0,.35);overflow-y:auto;top:50%;transform:translateY(-50%)}';
+    $css .= '.ig-modal-close{position:absolute;top:12px;right:12px;background:#f4f4f5;border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;color:#4b5563;z-index:2;display:flex;align-items:center;justify-content:center;transition:.15s}';
+    $css .= '.ig-modal-close:hover{background:#e5e7eb;color:#1a1a1a;transform:rotate(90deg)}';
+    $css .= '.ig-modal-body{padding:0}';
+    $css .= 'body.ig-modal-open{overflow:hidden}';
+    $css .= '@media (max-width:640px){.ig-modal-panel{width:calc(100% - 16px);margin:8px auto;max-height:calc(100vh - 16px);top:0;transform:none}}';
     $css .= '.single-product div.product .woocommerce-product-gallery{margin-bottom:24px}';
     $css .= '.single-product div.product .woocommerce-product-gallery__wrapper img{border-radius:8px}';
     $css .= '.single-product .product .product_title.entry-title{font-size:2rem;font-weight:700;color:#1a1a1a;margin-bottom:16px}';
@@ -351,6 +395,6 @@ add_action('wp_head', function () {
     $css .= '.single-product .woocommerce-tabs .tabs{border-bottom:2px solid #fcb10e}';
     $css .= '.single-product .woocommerce-tabs .tabs li.active a{color:#fcb10e;font-weight:700}';
     $css .= '.single-product .woocommerce-tabs .panel{padding:24px;background:#fff}';
-    $css .= '@media (max-width:768px){.single-product.woocommerce div.product,.single-product .woocommerce div.product{padding:24px 18px}.single-product .related.products,.single-product .up-sells.products{padding:24px 18px 40px;margin-top:32px}.ig-nativo-pasos{padding:18px 20px}.ig-nativo-sellos{flex-direction:column;align-items:flex-start;gap:12px}}';
+    $css .= '@media (max-width:768px){.single-product.woocommerce div.product,.single-product .woocommerce div.product{padding:24px 18px}.single-product .related.products,.single-product .up-sells.products{padding:24px 18px 40px;margin-top:32px}}';
     echo '<style id="ig-nativo-css">' . $css . '</style>';
 }, 20);
