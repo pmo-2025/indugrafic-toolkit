@@ -128,7 +128,28 @@ function indugrafic_presupuesto_handler(WP_REST_Request $request) {
     $cuerpo_admin .= "</p>";
     $cuerpo_admin .= "<h3 style=\"margin:16px 0 4px;\">Pedido</h3>";
     $cuerpo_admin .= "<p><strong>Cantidad:</strong> {$cantidad}</p>";
-    $cuerpo_admin .= "<p><strong>Descripción / medidas / acabado:</strong><br>" . nl2br(esc_html($descripcion)) . "</p>";
+
+    // Atributos seleccionados vía chips (color, tamano, etc.)
+    $labels_atr = ['color'=>'Color','tamano'=>'Tamaño','diametro'=>'Diámetro','material'=>'Material','medida'=>'Medida','medidas'=>'Medidas','profundidad'=>'Profundidad'];
+    $atributos_html = '';
+    foreach ($request->get_params() as $k => $v) {
+        if (strpos($k, 'atributo_') === 0 && !empty($v)) {
+            $key = substr($k, 9);
+            $label = $labels_atr[$key] ?? ucfirst($key);
+            $atributos_html .= "<strong>{$label}:</strong> " . esc_html(sanitize_text_field($v)) . "<br>";
+        }
+    }
+    if ($atributos_html) {
+        $cuerpo_admin .= "<p><strong>Opciones seleccionadas:</strong><br>" . $atributos_html . "</p>";
+    }
+
+    // Limpiar la descripción de líneas duplicadas (por si el JS antiguo dejaba "Color seleccionado:")
+    $descripcion_limpia = trim(preg_replace('/^(Color|Tama.o|Di.metro|Material|Medidas?|Profundidad) seleccionad[oa]:.*$/mi', '', $descripcion));
+    $descripcion_limpia = trim(preg_replace('/\n{2,}/', "\n\n", $descripcion_limpia));
+
+    if ($descripcion_limpia) {
+        $cuerpo_admin .= "<p><strong>Descripción / notas del cliente:</strong><br>" . nl2br(esc_html($descripcion_limpia)) . "</p>";
+    }
     if ($adjunto_url) {
         $cuerpo_admin .= "<h3 style=\"margin:16px 0 4px;\">Archivo adjunto</h3>";
         $cuerpo_admin .= "<p><a href=\"{$adjunto_url}\">{$adjunto_url}</a></p>";

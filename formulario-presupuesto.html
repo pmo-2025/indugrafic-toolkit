@@ -16,6 +16,8 @@
 .ig-pres .ig-file-drop.has-file{border-color:var(--ig-ok);background:#f0fdf4}
 .ig-pres .ig-file-drop input{display:none}
 .ig-pres .ig-file-name{font-weight:600;margin-top:8px;word-break:break-all}
+.ig-pres .ig-file-preview{margin-top:12px;max-width:200px;max-height:150px;border-radius:6px;border:1px solid #ddd;object-fit:contain;background:#fff}
+.ig-pres .ig-file-icon{margin-top:12px;font-size:2.5rem;line-height:1}
 .ig-pres .ig-honey{position:absolute;left:-9999px;top:-9999px;opacity:0}
 .ig-pres .ig-steps{display:flex;gap:8px;margin-bottom:24px}
 .ig-pres .ig-step-dot{flex:1;height:5px;background:var(--ig-border);border-radius:3px;transition:.2s}
@@ -84,6 +86,8 @@
             <small>PDF · AI · EPS · SVG · PNG · JPG — máx. 15 MB</small>
           </div>
           <div class="ig-file-name" id="igFileName" style="display:none"></div>
+          <img class="ig-file-preview" id="igFilePreview" style="display:none" alt="preview">
+          <div class="ig-file-icon" id="igFileIcon" style="display:none">📄</div>
         </div>
       </label>
       <label><span class="req">Descripción del pedido</span>
@@ -156,6 +160,8 @@
   var dropText = document.getElementById('igDropText');
   var fileNameEl = document.getElementById('igFileName');
   drop.addEventListener('click', function(){ fileInput.click(); });
+  var previewEl = document.getElementById('igFilePreview');
+  var iconEl = document.getElementById('igFileIcon');
   fileInput.addEventListener('change', function(){
     var f = fileInput.files[0];
     if (!f) return;
@@ -166,6 +172,47 @@
     fileNameEl.style.display = 'block';
     fileNameEl.textContent = '✓ ' + f.name + ' (' + (f.size/1024/1024).toFixed(2) + ' MB)';
     drop.classList.add('has-file');
+    previewEl.style.display = 'none';
+    iconEl.style.display = 'none';
+    if (['png','jpg','jpeg','svg'].indexOf(ext) !== -1) {
+      var reader = new FileReader();
+      reader.onload = function(e){ previewEl.src = e.target.result; previewEl.style.display = 'block'; };
+      reader.readAsDataURL(f);
+    } else {
+      iconEl.textContent = ext === 'pdf' ? '📄' : (ext === 'ai' || ext === 'eps' ? '🎨' : '📎');
+      iconEl.style.display = 'block';
+    }
+    hideMsg();
+  });
+
+  // Escuchar clicks en chips de atributos (fuera del formulario) para autorrellenar la descripción
+  var chipSelection = {color:'', tamano:''};
+  document.addEventListener('click', function(ev){
+    var chip = ev.target.closest('[data-ig-chip]');
+    if (!chip) return;
+    var type = chip.getAttribute('data-ig-chip');
+    var value = chip.getAttribute('data-ig-value');
+    if (type === 'color') chipSelection.color = value;
+    if (type === 'tamano') chipSelection.tamano = value;
+    // Toggle visual
+    document.querySelectorAll('[data-ig-chip="'+type+'"]').forEach(function(c){ c.classList.remove('is-selected'); });
+    chip.classList.add('is-selected');
+    // Actualizar textarea con la selección
+    var desc = form.querySelector('[name="descripcion"]');
+    if (desc) {
+      var descVal = desc.value;
+      descVal = descVal.split(/\n/).filter(function(l){ return !/^Color seleccionado:|^Tama.o seleccionado:/i.test(l); }).join('\n').trim();
+      var lines = [];
+      if (chipSelection.color) lines.push('Color seleccionado: ' + chipSelection.color);
+      if (chipSelection.tamano) lines.push('Tamaño seleccionado: ' + chipSelection.tamano);
+      desc.value = (lines.length ? lines.join('\n') + (descVal ? '\n\n' + descVal : '') : descVal);
+    }
+    // Si el usuario está en el paso 3 (resumen), refrescarlo con la nueva selección
+    if (current === 3) buildSummary();
+    // Quitar la marca de "ig-missing" si ahora tiene selección
+    var attrEl = chip.closest('.ig-attr');
+    if (attrEl) attrEl.classList.remove('ig-missing');
+    // Ocultar mensaje de error si estaba visible
     hideMsg();
   });
 
@@ -190,10 +237,19 @@
     return true;
   }
 
+  var attrLabelMap = { color:'Color', tamano:'Tamaño', diametro:'Diámetro', material:'Material', medida:'Medida', medidas:'Medidas', profundidad:'Profundidad' };
+  function attrLabel(key){ return attrLabelMap[key] || key.charAt(0).toUpperCase() + key.slice(1); }
+
   function buildSummary(){
     var d = new FormData(form);
     var html = '';
     html += '<div><strong>Producto:</strong> ' + (d.get('producto_nombre') || '—') + '</div>';
+    // Atributos seleccionados vía chips
+    Object.keys(chipSelection).forEach(function(k){
+      if (chipSelection[k]) {
+        html += '<div><strong>' + attrLabel(k) + ':</strong> ' + chipSelection[k] + '</div>';
+      }
+    });
     html += '<div><strong>Nombre:</strong> ' + d.get('nombre') + '</div>';
     html += '<div><strong>Email:</strong> ' + d.get('email') + '</div>';
     html += '<div><strong>Teléfono:</strong> ' + d.get('telefono') + '</div>';
@@ -201,7 +257,9 @@
     html += '<div><strong>Cantidad:</strong> ' + d.get('cantidad') + '</div>';
     var f = fileInput.files[0];
     html += '<div><strong>Archivo:</strong> ' + (f ? f.name : 'Sin adjunto') + '</div>';
-    html += '<div style="margin-top:8px"><strong>Descripción:</strong><br>' + (d.get('descripcion')||'').replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+    // Descripción limpia (sin las líneas de "Color seleccionado" que se guardan aparte)
+    var descClean = (d.get('descripcion')||'').split(/\n/).filter(function(l){ return !/^Color seleccionado:|^Tama.o seleccionado:|^[A-Z][a-zá-úñ]+ seleccionad[oa]:/i.test(l); }).join('\n').trim();
+    if (descClean) html += '<div style="margin-top:8px"><strong>Descripción:</strong><br>' + descClean.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
     document.getElementById('igSummary').innerHTML = html;
   }
 
@@ -216,13 +274,43 @@
     root.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
+  function validateChips(){
+    var groups = {};
+    document.querySelectorAll('[data-ig-chip]').forEach(function(chip){
+      var type = chip.getAttribute('data-ig-chip');
+      if (!groups[type]) groups[type] = false;
+      if (chip.classList.contains('is-selected')) groups[type] = true;
+    });
+    var missing = Object.keys(groups).filter(function(t){ return !groups[t]; });
+    // Reset visual
+    document.querySelectorAll('.ig-attr').forEach(function(a){ a.classList.remove('ig-missing'); });
+    if (missing.length === 0) return true;
+    // Marcar los que faltan
+    var labelMap = { color:'un color', tamano:'un tamaño', diametro:'un diámetro', material:'un material', medida:'una medida', medidas:'unas medidas' };
+    var labels = missing.map(function(t){ return labelMap[t] || 'una opción de ' + t; });
+    missing.forEach(function(t){
+      var el = document.querySelector('.ig-attr[data-ig-group="'+t+'"]');
+      if (el) el.classList.add('ig-missing');
+    });
+    showMsg('err', 'Antes de enviar, selecciona ' + labels.join(' y ') + ' arriba en la ficha del producto.');
+    var firstMissing = document.querySelector('.ig-attr.ig-missing');
+    if (firstMissing) firstMissing.scrollIntoView({behavior:'smooth', block:'center'});
+    return false;
+  }
+
   btnNext.addEventListener('click', async function(){
     if (!validateStep(current)) return;
     if (current < 3) { goStep(current + 1); return; }
+    // Validar chips obligatorios antes de enviar
+    if (!validateChips()) return;
     // Enviar
     btnNext.disabled = true;
     btnNext.textContent = 'Enviando...';
     var fd = new FormData(form);
+    // Añadir atributos seleccionados como campos separados (atributo_color=Azul, atributo_tamano=10x10 cm, etc.)
+    Object.keys(chipSelection).forEach(function(k){
+      if (chipSelection[k]) fd.append('atributo_' + k, chipSelection[k]);
+    });
     try {
       var r = await fetch(ENDPOINT, { method: 'POST', body: fd });
       var j = await r.json();
