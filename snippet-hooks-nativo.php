@@ -4,7 +4,7 @@
  * Limitado al producto TEST id 2418.
  */
 
-const INDUGRAFIC_TEST_ID = 2418;
+const INDUGRAFIC_TEST_ID = null; // null = aplica a TODOS los productos. Poner 2418 para restringir al TEST.
 
 /* Datos de contacto (edita aquí si cambian) */
 const INDUGRAFIC_TEL = '+34605679244';
@@ -22,7 +22,7 @@ function indugrafic_is_test_product() {
  *       aplica su plantilla. Si devolvemos "[]", cree que no hay condiciones y no
  *       toca el render → WooCommerce nativo. */
 add_filter('pre_option_wpr_product_single_conditions', function ($pre_value) {
-    if (function_exists('is_product') && is_product() && (int) get_the_ID() === INDUGRAFIC_TEST_ID) {
+    if (indugrafic_is_test_product()) {
         return '[]';
     }
     return $pre_value;
@@ -31,7 +31,7 @@ add_filter('pre_option_wpr_product_single_conditions', function ($pre_value) {
 /* 0.B - Backup por si Royal cachea la opción: template_include con priority
  *       superior a la 12 de Royal (convert_to_canvas). */
 add_filter('template_include', function ($template) {
-    if (function_exists('is_product') && is_product() && (int) get_the_ID() === INDUGRAFIC_TEST_ID) {
+    if (indugrafic_is_test_product()) {
         if (defined('WC_ABSPATH')) {
             $wc_tpl = WC_ABSPATH . 'templates/single-product.php';
             if (file_exists($wc_tpl)) return $wc_tpl;
@@ -48,7 +48,7 @@ add_filter('template_include', function ($template) {
 add_filter('elementor/theme/get_location_templates', function ($templates, $location) {
     if ($location !== 'single' && $location !== 'single-product') return $templates;
     if (!is_singular('product')) return $templates;
-    if ((int) get_the_ID() !== INDUGRAFIC_TEST_ID) return $templates;
+    if (!indugrafic_is_test_product()) return $templates;
     return [];
 }, 20, 2);
 
@@ -82,12 +82,13 @@ add_action('template_redirect', function () {
     });
 }, 1);
 
-/* 1. Ocultar precio + add-to-cart + ratings */
+/* 1. Ocultar precio + add-to-cart + ratings + meta (categoría/tags) */
 add_action('woocommerce_before_single_product', function () {
     if (!indugrafic_is_test_product()) return;
     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_price', 10);
     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30);
     remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10);
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40);
 }, 5);
 
 /* Mapa nombre de color -> hex (para pintar círculos) */
@@ -177,7 +178,7 @@ add_action('woocommerce_single_product_summary', function () {
     $prod_name = get_the_title();
     $wa_msg = rawurlencode('Hola, me interesa ' . $prod_name . '. Quiero información antes de rellenar el formulario.');
     $out  = '<div class="ig-cta-block ig-in-summary">';
-    $out .= '<button type="button" class="ig-cta-primary" id="igOpenModal" disabled data-tooltip="Selecciona color y tamaño para continuar">📝 Solicitar presupuesto</button>';
+    $out .= '<button type="button" class="ig-cta-primary" id="igOpenModal" disabled data-tooltip="Selecciona color y tamaño para continuar">📝 Rellenar formulario de pedido</button>';
     $out .= '<div class="ig-cta-secondary">';
     $out .= '<a class="ig-cta-btn ig-cta-wa" href="https://wa.me/' . INDUGRAFIC_WA . '?text=' . $wa_msg . '" target="_blank" rel="noopener">💬 WhatsApp</a>';
     $out .= '<a class="ig-cta-btn ig-cta-tel" href="tel:' . INDUGRAFIC_TEL . '">📞 Llamar</a>';
@@ -185,16 +186,7 @@ add_action('woocommerce_single_product_summary', function () {
     echo $out;
 }, 33);
 
-/* 2.A4 - Sellos de confianza en la columna derecha (dentro del summary) */
-add_action('woocommerce_single_product_summary', function () {
-    if (!indugrafic_is_test_product()) return;
-    $out  = '<div class="ig-nativo-sellos ig-in-summary">';
-    $out .= '<div class="ig-sello">❓ Déjanos tu pedido</div>';
-    $out .= '<div class="ig-sello">⏱ Producción 24-48 horas</div>';
-    $out .= '<div class="ig-sello">🎨 Personalizado según tu diseño</div>';
-    $out .= '</div>';
-    echo $out;
-}, 35);
+/* 2.A4 - Sellos de confianza eliminados a petición del cliente */
 
 /* 2.A.bis - Ocultar la pestaña "Información adicional" (ya movida arriba como bloques) */
 add_filter('woocommerce_product_tabs', function ($tabs) {
@@ -211,6 +203,13 @@ add_action('wp', function () {
     remove_action('woocommerce_after_single_product_summary', 'woocommerce_output_product_data_tabs', 10);
     add_action('woocommerce_after_single_product_summary', 'woocommerce_output_product_data_tabs', 17);
 }, 20);
+
+/* 2.H - H1 duplicado antes de la galería (visible solo en mobile, oculto en desktop por CSS).
+ *       Priority 5 = antes de woocommerce_show_product_images (priority 20). */
+add_action('woocommerce_before_single_product_summary', function () {
+    if (!indugrafic_is_test_product()) return;
+    echo '<h1 class="product_title entry-title ig-mobile-title">' . esc_html(get_the_title()) . '</h1>';
+}, 5);
 
 /* 2.F - Breadcrumbs (Inicio > Tienda > Categoría > Producto) al inicio de la ficha */
 add_action('woocommerce_before_single_product', function () {
@@ -293,7 +292,7 @@ add_action('wp_footer', function () {
 
 /* 2.B - Productos relacionados: mostrar el resto de productos (no por categoría) */
 add_filter('woocommerce_related_products', function ($related_posts, $product_id, $args) {
-    if ((int) $product_id !== INDUGRAFIC_TEST_ID) return $related_posts;
+    if (INDUGRAFIC_TEST_ID !== null && (int) $product_id !== INDUGRAFIC_TEST_ID) return $related_posts;
     $ids = wc_get_products([
         'status'   => 'publish',
         'limit'    => 6,
@@ -392,5 +391,11 @@ add_action('wp_head', function () {
     $css .= '.single-product .woocommerce-tabs .tabs li.active a{color:#fcb10e;font-weight:700}';
     $css .= '.single-product .woocommerce-tabs .panel{padding:24px;background:#fff}';
     $css .= '@media (max-width:768px){.single-product.woocommerce div.product,.single-product .woocommerce div.product{padding:24px 18px}.single-product .related.products,.single-product .up-sells.products{padding:24px 18px 40px;margin-top:32px}}';
+    /* Mobile: H1 duplicado arriba visible sólo en mobile; H1 original del summary oculto en mobile */
+    $css .= '.single-product h1.ig-mobile-title,body.single-product .ig-mobile-title,.ig-mobile-title{display:none!important}';
+    $css .= '@media (max-width:768px){';
+    $css .= '.single-product h1.ig-mobile-title,body.single-product .ig-mobile-title,.ig-mobile-title{display:block!important;font-size:1.65rem;font-weight:700;color:#1a1a1a;margin:0 0 16px;line-height:1.25;padding:0 4px}';
+    $css .= '.single-product .product .summary .product_title.entry-title:not(.ig-mobile-title){display:none!important}';
+    $css .= '}';
     echo '<style id="ig-nativo-css">' . $css . '</style>';
 }, 20);
