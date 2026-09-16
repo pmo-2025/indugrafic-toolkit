@@ -14,9 +14,8 @@ add_action('rest_api_init', function () {
 });
 
 function indugrafic_presupuesto_handler(WP_REST_Request $request) {
-    // ⚙️ MODO: cambiar a false cuando esté todo probado para enviar a producción
-    $MODO_TEST = true;
-    $DEST_EMAIL = $MODO_TEST ? 'agenciapmonline2@gmail.com' : 'info@indugrafic.es';
+    // Dirección que recibe TODOS los avisos del formulario de la web
+    $DEST_EMAIL = 'Indugrafic2@gmail.com';
     $ALLOWED_MIME = [
         'application/pdf', 'application/postscript', 'application/illustrator',
         'image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg'
@@ -161,7 +160,7 @@ function indugrafic_presupuesto_handler(WP_REST_Request $request) {
 
     $headers_admin = [
         'Content-Type: text/html; charset=UTF-8',
-        'From: Indugrafic Web <no-reply@indugrafic.es>',
+        'From: Indugrafic Web <Indugrafic2@gmail.com>',
         'Reply-To: ' . $nombre . ' <' . $email . '>',
     ];
     $adjuntos_mail = $adjunto_path ? [$adjunto_path] : [];
@@ -182,7 +181,8 @@ function indugrafic_presupuesto_handler(WP_REST_Request $request) {
 
     $headers_cli = [
         'Content-Type: text/html; charset=UTF-8',
-        'From: Indugrafic <' . $DEST_EMAIL . '>',
+        'From: Indugrafic <Indugrafic2@gmail.com>',
+        'Reply-To: Indugrafic <' . $DEST_EMAIL . '>',
     ];
     wp_mail($email, $asunto_cli, $cuerpo_cli, $headers_cli);
 

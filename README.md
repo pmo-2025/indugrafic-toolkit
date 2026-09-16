@@ -43,20 +43,20 @@ Herramientas y snippets creados para [indugrafic.es](https://indugrafic.es/):
 3. `node install-shortcode.mjs` — sube el shortcode del formulario
 4. Añade el shortcode `[indugrafic_presupuesto_form]` en la plantilla Single Product (widget Shortcode de Elementor)
 5. Verifica que el endpoint responde: `curl -X POST https://tu-web/wp-json/indugrafic/v1/presupuesto` debe devolver `400` con lista de errores de validación
-6. Cambia `$MODO_TEST = false;` en `snippet-presupuesto.php` cuando esté todo probado, y ejecuta `node update-snippet.mjs` para aplicar
+6. Tras cualquier cambio en `snippet-presupuesto.php`, ejecuta `node update-snippet.mjs` para aplicarlo en la web
 
 ---
 
-## Modo test / producción
+## Dirección de destino de los emails
 
 En `snippet-presupuesto.php`:
 
 ```php
-$MODO_TEST = true;   // emails van a la dirección de test
-$MODO_TEST = false;  // emails van a info@indugrafic.es
+$DEST_EMAIL = 'Indugrafic2@gmail.com';   // recibe todos los avisos del formulario
 ```
 
-Cambiar el destino real modificando `$DEST_EMAIL` en la misma función.
+Es el buzón al que llega el aviso de cada solicitud y al que responden los clientes.
+Los emails salen siempre desde `no-reply@indugrafic.es`.
 
 ---
 
