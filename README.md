@@ -56,7 +56,7 @@ $DEST_EMAIL = 'Indugrafic2@gmail.com';   // recibe todos los avisos del formular
 ```
 
 Es el buzón al que llega el aviso de cada solicitud y al que responden los clientes.
-Los emails salen siempre desde `no-reply@indugrafic.es`.
+Los emails salen siempre desde esa misma cuenta (`From: Indugrafic <Indugrafic2@gmail.com>`): el dominio no tiene buzones propios, así que no se usa ningún `no-reply@indugrafic.es`. En el aviso interno, el `Reply-To` apunta al cliente para poder responderle directamente.
 
 ---
 
