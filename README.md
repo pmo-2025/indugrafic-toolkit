@@ -24,6 +24,7 @@ Herramientas y snippets creados para [indugrafic.es](https://indugrafic.es/):
 | `update-snippet.mjs` / `update-shortcode.mjs` | Actualizan los snippets existentes cuando se modifica el código local. |
 | `create-snippet.mjs` | Snippet original del fix de galería (junio 2026). |
 | `inspect-gallery.mjs` / `probe.mjs` | Scripts de diagnóstico. |
+| `wp-api-chrome.mjs` | Llama a la API REST desde una pestaña de Chrome, para saltar el reto anti-bots del hosting (ver abajo). |
 
 ---
 
@@ -44,6 +45,26 @@ Herramientas y snippets creados para [indugrafic.es](https://indugrafic.es/):
 4. Añade el shortcode `[indugrafic_presupuesto_form]` en la plantilla Single Product (widget Shortcode de Elementor)
 5. Verifica que el endpoint responde: `curl -X POST https://tu-web/wp-json/indugrafic/v1/presupuesto` debe devolver `400` con lista de errores de validación
 6. Tras cualquier cambio en `snippet-presupuesto.php`, ejecuta `node update-snippet.mjs` para aplicarlo en la web
+
+---
+
+## Acceso a la API: reto anti-bots del hosting
+
+Desde septiembre de 2026 el hosting responde con una pantalla "Un momento…" (cookie `wssplashchk`) a cualquier petición que no venga de un navegador real, **incluida la API REST**. Por eso los scripts `*.mjs` que llaman a la API con `fetch` desde node ya no funcionan tal cual.
+
+Solución sin tocar el hosting: abrir Chrome con `--remote-debugging-port=9222` y un perfil aparte, y lanzar las peticiones con `wp-api-chrome.mjs`, que las hace desde dentro de la pestaña. La otra opción es desactivar la protección anti-bots en el panel del hosting o dejar pasar `/wp-json/`.
+
+---
+
+## Google Analytics y cookies
+
+Desde el 30/09/2026:
+
+- **GA4 activo:** propiedad `indugrafic.es` en la cuenta de kitpmo@gmail.com, **ID de medición `G-WMYM0DHR2F`**, flujo web 15891669221.
+- **Lo inserta Complianz** (versión gratuita 7.4.5, en Asistente → Estadísticas), no un script suelto. Solo se carga cuando el visitante pulsa Aceptar. Comprobado: antes de aceptar no hay `_ga` ni envíos a Google; después sí.
+- No hay Consent Mode v2, porque en Complianz es de pago.
+- **La etiqueta antigua `G-WHLXFJ3T2Q`** era de la web anterior y se cargaba sin consentimiento. La metía el **módulo Analytics de Rank Math**, que se ha desactivado ("Instalar código de Analytics"). Hay copia de su configuración en la opción `pmo_backup_rankmath_ga_20260930`. **No hay que volver a activarlo**: la web tendría dos etiquetas y una sin consentimiento.
+- Pendiente: el nombre o la razón social del titular en el Aviso Legal (Complianz → Asistente → Información de la web).
 
 ---
 
